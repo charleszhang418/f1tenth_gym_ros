@@ -33,6 +33,7 @@ from geometry_msgs.msg import Transform
 from geometry_msgs.msg import Quaternion
 from ackermann_msgs.msg import AckermannDriveStamped
 from tf2_ros import TransformBroadcaster
+# from wall_follow import WallFollow
 
 import gym
 import numpy as np
@@ -65,6 +66,10 @@ class GymBridge(Node):
         self.declare_parameter('sy1')
         self.declare_parameter('stheta1')
         self.declare_parameter('kb_teleop')
+
+        self.logger = self.get_logger()
+
+        # self.wall_follow = WallFollow('/scan', '/drive')
 
         # check num_agents
         num_agents = self.get_parameter('num_agent').value
@@ -154,6 +159,7 @@ class GymBridge(Node):
             '/initialpose',
             self.ego_reset_callback,
             10)
+
         if num_agents == 2:
             self.opp_drive_sub = self.create_subscription(
                 AckermannDriveStamped,
@@ -178,11 +184,13 @@ class GymBridge(Node):
         self.ego_requested_speed = drive_msg.drive.speed
         self.ego_steer = drive_msg.drive.steering_angle
         self.ego_drive_published = True
+        self.logger.info(f"Ego Drive Callback - Requested Speed: {self.ego_requested_speed}, Steering Angle: {self.ego_steer}")
 
     def opp_drive_callback(self, drive_msg):
         self.opp_requested_speed = drive_msg.drive.speed
         self.opp_steer = drive_msg.drive.steering_angle
         self.opp_drive_published = True
+        self.logger.info(f"Opponent Drive Callback - Requested Speed: {self.opp_requested_speed}, Steering Angle: {self.opp_steer}")
 
     def ego_reset_callback(self, pose_msg):
         rx = pose_msg.pose.pose.position.x
@@ -197,6 +205,7 @@ class GymBridge(Node):
             self.obs, _ , self.done, _ = self.env.reset(np.array([[rx, ry, rtheta], opp_pose]))
         else:
             self.obs, _ , self.done, _ = self.env.reset(np.array([[rx, ry, rtheta]]))
+        self.logger.info("Ego Reset Callback")
 
     def opp_reset_callback(self, pose_msg):
         if self.has_opp:
@@ -220,6 +229,7 @@ class GymBridge(Node):
             self.ego_steer = -0.3
         else:
             self.ego_steer = 0.0
+        self.logger.info(f"Teleop Callback - Requested Speed: {self.ego_requested_speed}, Steering Angle: {self.ego_steer}")
 
     def drive_timer_callback(self):
         if self.ego_drive_published and not self.has_opp:
@@ -242,6 +252,7 @@ class GymBridge(Node):
         scan.range_max = 30.
         scan.ranges = self.ego_scan
         self.ego_scan_pub.publish(scan)
+        # print(f"Car Velocity: {scan.ranges}")
 
         if self.has_opp:
             opp_scan = LaserScan()
@@ -260,6 +271,8 @@ class GymBridge(Node):
         self._publish_transforms(ts)
         self._publish_laser_transforms(ts)
         self._publish_wheel_transforms(ts)
+
+        # self.wall_follow.scan_callback(scan)
 
     def _update_sim_state(self):
         self.ego_scan = list(self.obs['scans'][0])
