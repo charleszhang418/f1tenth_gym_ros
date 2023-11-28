@@ -64,20 +64,53 @@ class WallFollow(Node):
 
         return distance_left_side, distance_right_side
     
-        center_points = []
+        # center_points = []
+
+        # # Iterate over the range of indices corresponding to the walls
+        # for i in range(index_left_wall, index_right_wall + 1):
+        #     # Calculate the angle for the current index
+        #     current_angle = angle_min + i * angle_increment
+
+        #     # Calculate the center point in Cartesian coordinates
+        #     x = ranges[i] * math.cos(current_angle)
+        #     y = ranges[i] * math.sin(current_angle)
+
+        #     center_points.append((x, y))
+
+        # return center_points
+
+
+        """
+        """
+        # Initialize arrays to store left and right wall points
+        left_wall_points = []
+        right_wall_points = []
 
         # Iterate over the range of indices corresponding to the walls
         for i in range(index_left_wall, index_right_wall + 1):
             # Calculate the angle for the current index
             current_angle = angle_min + i * angle_increment
 
-            # Calculate the center point in Cartesian coordinates
+            # Calculate the wall point in Cartesian coordinates
             x = ranges[i] * math.cos(current_angle)
             y = ranges[i] * math.sin(current_angle)
 
-            center_points.append((x, y))
+            # Determine whether the point is on the left or right side
+            if current_angle < 0:
+                left_wall_points.append((x, y))
+            else:
+                right_wall_points.append((x, y))
 
-        return center_points
+        # Calculate the center points
+        center_points = [(0, 0)] * max(len(left_wall_points), len(right_wall_points))
+
+        for i in range(len(center_points)):
+            x_left, y_left = left_wall_points[i] if i < len(left_wall_points) else (0, 0)
+            x_right, y_right = right_wall_points[i] if i < len(right_wall_points) else (0, 0)
+
+            center_points[i] = ((x_left + x_right) / 2, (y_left + y_right) / 2)
+
+        return left_wall_points, right_wall_points, center_points
     
 
     # def drive_callback(self, drive_msg):
