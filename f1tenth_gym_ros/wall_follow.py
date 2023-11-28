@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
@@ -36,13 +37,47 @@ class WallFollow(Node):
                             # device does not provide intensities, please leave
                             # the array empty.
     """
-    # def scan_callback(self, msg):
+    def scan_callback(self, msg):
     #     """Callback function for LaserScan messages. Print the range data."""
     #     ranges = msg.ranges
     #     print(f"LaserScan Ranges: {ranges}")
     #     for i, range_value in enumerate(ranges):
     #         if range_value < 1.0:  # Replace 1.0 with your desired threshold
     #             print(f"Obstacle detected at angle {msg.angle_min + i * msg.angle_increment}")
+    # Extract relevant attributes from the LaserScan message
+        angle_min = msg.angle_min
+        angle_max = msg.angle_max
+        angle_increment = msg.angle_increment
+        ranges = msg.ranges
+
+        # Define the angles corresponding to the sides of your car
+        angle_left_side = -math.pi / 4  # Adjust based on your specific setup
+        angle_right_side = math.pi / 4   # Adjust based on your specific setup
+
+        # Calculate the corresponding indices in the ranges array
+        index_left_side = int((angle_left_side - angle_min) / angle_increment)
+        index_right_side = int((angle_right_side - angle_min) / angle_increment)
+
+        # Get the range values at the specified angles
+        distance_left_side = ranges[index_left_side]
+        distance_right_side = ranges[index_right_side]
+
+        return distance_left_side, distance_right_side
+    
+        center_points = []
+
+        # Iterate over the range of indices corresponding to the walls
+        for i in range(index_left_wall, index_right_wall + 1):
+            # Calculate the angle for the current index
+            current_angle = angle_min + i * angle_increment
+
+            # Calculate the center point in Cartesian coordinates
+            x = ranges[i] * math.cos(current_angle)
+            y = ranges[i] * math.sin(current_angle)
+
+            center_points.append((x, y))
+
+        return center_points
     
 
     # def drive_callback(self, drive_msg):
@@ -51,6 +86,18 @@ class WallFollow(Node):
     #     self.logger.info(f"Ego Drive Callback - Requested Speed: {ego_requested_speed}, Steering Angle: {ego_steer}")
 
     def state_callback(self, msg):
+        """
+        string child_frame_id
+            pose:
+                x, 
+                y, 
+                z, 
+                rotation about X axis, 
+                rotation about Y axis, 
+                rotation about Z axis
+            twist:
+                
+        """
         position_x = msg.pose.pose.position.x
         position_y = msg.pose.pose.position.y
         position_z = msg.pose.pose.position.z
