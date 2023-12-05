@@ -69,7 +69,6 @@ class GymBridge(Node):
 
         self.logger = self.get_logger()
 
-        # self.wall_follow = WallFollow('/scan', '/drive')
 
         # check num_agents
         num_agents = self.get_parameter('num_agent').value
