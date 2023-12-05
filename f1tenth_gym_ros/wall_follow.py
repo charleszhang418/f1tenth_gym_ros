@@ -62,11 +62,11 @@ class WallFollow(Node):
     def state_callback(self, msg):
         """
         pose:
-            x 
-            y 
-            z 
+            x
+            y
+            z
             rotation about X axis
-            rotation about Y axis 
+            rotation about Y axis
             rotation about Z axis
         """
         self.position_x = msg.pose.pose.position.x
